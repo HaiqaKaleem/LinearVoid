@@ -324,14 +324,7 @@ mod tests {
         let sig = hybrid_primitives::ecdsa_p256_mldsa_87();
         let (vk, sk) = sig.skgen_h().unwrap();
 
-        let token = mint_id_token(
-            &sig,
-            &sk,
-            &demo_config(),
-            1_800_000_000,
-            1_700_000_000,
-        )
-        .unwrap();
+        let token = mint_id_token(&sig, &sk, &demo_config(), 1_800_000_000, 1_700_000_000).unwrap();
 
         let err = verify_id_token(
             &sig,
@@ -350,14 +343,7 @@ mod tests {
         let sig = hybrid_primitives::ecdsa_p256_mldsa_87();
         let (vk, sk) = sig.skgen_h().unwrap();
 
-        let token = mint_id_token(
-            &sig,
-            &sk,
-            &demo_config(),
-            1_800_000_000,
-            1_700_000_000,
-        )
-        .unwrap();
+        let token = mint_id_token(&sig, &sk, &demo_config(), 1_800_000_000, 1_700_000_000).unwrap();
 
         // A verifier holding a different exporter secret must not be able to
         // bind the token to its own channel.
@@ -374,14 +360,16 @@ mod tests {
         // Verify with bound=None must still succeed: the signature is valid,
         // and verify_jwt does not enforce channel binding when the caller opts
         // out of it.
-        assert!(verify_id_token(
-            &sig,
-            &vk,
-            &token,
-            "https://client.example.com",
-            "https://op.example.com",
-            &bad_config,
-        )
-        .is_ok());
+        assert!(
+            verify_id_token(
+                &sig,
+                &vk,
+                &token,
+                "https://client.example.com",
+                "https://op.example.com",
+                &bad_config,
+            )
+            .is_ok()
+        );
     }
 }
