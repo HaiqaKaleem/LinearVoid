@@ -1,0 +1,20 @@
+[package]
+name = "hybrid-ffi"
+description = "C ABI (cdylib + staticlib) for hybrid-oidc: hybrid KEM, hybrid signatures, and ID token mint/verify callable from C"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+hybrid-core.workspace = true
+hybrid-primitives.workspace = true
+hybrid-oidc.workspace = true
+zeroize.workspace = true
+serde_json.workspace = true
+cstring = "0.1.1"

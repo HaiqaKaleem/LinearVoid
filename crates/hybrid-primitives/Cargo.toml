@@ -1,0 +1,28 @@
+[package]
+name = "hybrid-primitives"
+description = "Real primitive backends for hybrid-oidc: ML-KEM-768 (FIPS 203), ML-DSA-87 (FIPS 204), X25519, ECDSA P-256"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+hybrid-core.workspace = true
+ml-kem.workspace = true
+ml-dsa.workspace = true
+hybrid-array.workspace = true
+x25519-dalek.workspace = true
+p256.workspace = true
+getrandom.workspace = true
+zeroize.workspace = true
+hkdf.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+hex.workspace = true
+
+[[bench]]
+name = "primitives"
+harness = false

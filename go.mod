@@ -1,3 +1,1 @@
-module hybridoidc
-
-go 1.22
+module github.com/HaiqaKaleem1/hybrid-oidc

@@ -1,0 +1,22 @@
+[package]
+name = "hybrid-oidc"
+description = "OpenID Connect layer on hybrid signatures: ID token minting/verification, discovery document, JWKS with composite keys, and explicit downgrade policy"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+hybrid-core.workspace = true
+hybrid-primitives.workspace = true
+hybrid-jwt.workspace = true
+base64.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+hmac.workspace = true
+hex = "0.4"
+subtle.workspace = true

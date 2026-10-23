@@ -1,0 +1,20 @@
+[package]
+name = "hybrid-core"
+description = "Composite-hybrid KEM (Alg 3) and signature (Alg 4) construction, fixed-length encodings, dual-PRF key extraction, and the executable formal model from docs/hybrid-oidc-security-spec.md"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+hmac.workspace = true
+hkdf.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+thiserror.workspace = true
+getrandom.workspace = true
+
+[dev-dependencies]
+hex.workspace = true
