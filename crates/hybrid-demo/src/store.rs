@@ -1,11 +1,10 @@
 //! Demo user/resource database for simulating OIDC resource owners, clients, and grants.
 //! For demo purposes only — in-memory, no persistence.
 
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use getrandom::fill;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use hex;
+use std::collections::HashMap;
 
 /// A resource owner (end-user) in the demo OP.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,6 +70,8 @@ pub struct RefreshTokenRecord {
 #[derive(Debug, Deserialize)]
 pub struct RevokeRequest {
     pub token: String,
+    /// Parsed per RFC 7009's request shape; not yet consulted by the demo.
+    #[allow(dead_code)]
     pub token_type_hint: Option<String>,
     pub client_id: Option<String>,
     pub client_secret: Option<String>,
@@ -82,6 +83,9 @@ pub struct DemoStore {
     clients: HashMap<String, Client>,
     grants: HashMap<String, Grant>,
     access_tokens: HashMap<String, AccessTokenRecord>,
+    /// Written by `save_refresh_token` and read by `take_refresh_token`, both
+    /// used by the not-yet-implemented `/token` endpoint (see `token_handler`).
+    #[allow(dead_code)]
     refresh_tokens: HashMap<String, RefreshTokenRecord>,
     revocation_list: Vec<String>,
 }
@@ -144,12 +148,10 @@ impl DemoStore {
         match self.clients.get(client_id) {
             Some(client) => match client.token_endpoint_auth_method.as_str() {
                 "none" => client_secret.is_none(),
-                _ => {
-                    match (client.client_secret.as_deref(), client_secret) {
-                        (Some(expected), Some(given)) => expected == given,
-                        _ => false,
-                    }
-                }
+                _ => match (client.client_secret.as_deref(), client_secret) {
+                    (Some(expected), Some(given)) => expected == given,
+                    _ => false,
+                },
             },
             None => false,
         }
@@ -159,10 +161,16 @@ impl DemoStore {
         self.grants.insert(grant.id.clone(), grant);
     }
 
+    /// Redeems an authorization code; used by the not-yet-implemented
+    /// `/token` endpoint (see `token_handler`).
+    #[allow(dead_code)]
     pub fn take_grant(&mut self, id: &str) -> Option<Grant> {
         self.grants.remove(id)
     }
 
+    /// Records a freshly minted access token; used by the not-yet-implemented
+    /// `/token` endpoint (see `token_handler`).
+    #[allow(dead_code)]
     pub fn save_access_token(&mut self, at: AccessTokenRecord) {
         self.access_tokens.insert(at.access_token.clone(), at);
     }
@@ -184,15 +192,24 @@ impl DemoStore {
         self.access_tokens.get(token).cloned()
     }
 
+    /// Records a freshly minted refresh token; used by the not-yet-implemented
+    /// `/token` endpoint (see `token_handler`).
+    #[allow(dead_code)]
     pub fn save_refresh_token(&mut self, rt: RefreshTokenRecord) {
         self.refresh_tokens.insert(rt.refresh_token.clone(), rt);
     }
 
+    /// Consumes a refresh token (rotation); used by the not-yet-implemented
+    /// `/token` endpoint (see `token_handler`).
+    #[allow(dead_code)]
     pub fn take_refresh_token(&mut self, token: &str) -> Option<RefreshTokenRecord> {
         self.refresh_tokens.remove(token)
     }
 }
 
+/// Wall-clock helper for the not-yet-implemented `/token` endpoint; `main.rs`
+/// keeps its own copy for the handlers that are wired up today.
+#[allow(dead_code)]
 fn current_time_secs() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -201,11 +218,14 @@ fn current_time_secs() -> u64 {
 }
 
 /// Generate a nonce string.
+///
+/// Used by the not-yet-implemented `/token` endpoint (see `token_handler`).
+#[allow(dead_code)]
 pub fn demo_nonce() -> String {
     let mut buf = [0u8; 32];
     fill(&mut buf).expect("os rng");
-    let digest = Sha256::digest(&buf);
-    hex::encode(&digest)[..16].to_string()
+    let digest = Sha256::digest(buf);
+    hex::encode(digest)[..16].to_string()
 }
 
 #[cfg(test)]
