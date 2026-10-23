@@ -1,0 +1,21 @@
+[package]
+name = "vector-gen"
+description = "Deterministic known-answer-test (KAT) vector generator for hybrid-oidc; committed vectors live in vectors/"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "vector-gen"
+path = "src/main.rs"
+
+[dependencies]
+hybrid-core.workspace = true
+hybrid-primitives.workspace = true
+hybrid-jwt.workspace = true
+hybrid-oidc.workspace = true
+serde_json.workspace = true
+hex.workspace = true
