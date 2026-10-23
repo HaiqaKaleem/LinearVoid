@@ -217,7 +217,15 @@ mod tests {
         let jwt = sign_jwt2(&sig, &sk, header, payload, exporter_secret, label, context).unwrap();
         // The signature is valid for header || "." || payload || bound, so
         // verify_jwt accepts any supplied bound token.
-        assert!(verify_jwt(&sig, &vk, &jwt, Some(&channel_binding(exporter_secret, label, context))).is_ok());
+        assert!(
+            verify_jwt(
+                &sig,
+                &vk,
+                &jwt,
+                Some(&channel_binding(exporter_secret, label, context))
+            )
+            .is_ok()
+        );
     }
 
     #[test]
@@ -251,7 +259,17 @@ mod tests {
         .unwrap();
         // The channel-binding helpers round-trip: signing with one set of binding
         // parameters and verifying with the same set succeeds.
-        assert!(verify_jwt2(&sig, &vk, &jwt, b"exporter-secret-conn-1", b"tls-exporter", b"rp").is_ok());
+        assert!(
+            verify_jwt2(
+                &sig,
+                &vk,
+                &jwt,
+                b"exporter-secret-conn-1",
+                b"tls-exporter",
+                b"rp"
+            )
+            .is_ok()
+        );
         // Verifying without any binding also succeeds, because verify_jwt accepts
         // any supplied bound token as long as the signature matches.
         assert!(verify_jwt_simple(&sig, &vk, &jwt).is_ok());
