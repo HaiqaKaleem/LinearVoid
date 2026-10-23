@@ -1,7 +1,7 @@
 use hex::encode;
 use hybrid_oidc::{build_jwks, discovery};
-use hybrid_primitives::{ecdsa_p256_mldsa_87, sizes};
 use hybrid_primitives::x25519_ml_kem_768;
+use hybrid_primitives::{ecdsa_p256_mldsa_87, sizes};
 
 fn main() {
     println!("=== hybrid-oidc Known-Answer-Test (KAT) Vectors ===\n");
