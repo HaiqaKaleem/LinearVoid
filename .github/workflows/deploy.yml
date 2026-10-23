@@ -1,0 +1,34 @@
+name: Deploy hybrid-oidc
+
+on:
+  push:
+    branches: [freebuff/e76f9bac84e8c495968fc452]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain-file: rust-toolchain.toml
+          components: clippy, rustfmt
+
+      - name: Format check
+        run: cargo +nightly-2025-11-30 fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --workspace --all-targets --no-fail-fast
+
+      - name: Demo build
+        run: cargo build -p hybrid-demo --release

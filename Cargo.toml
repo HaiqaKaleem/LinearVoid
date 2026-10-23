@@ -1,0 +1,64 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/hybrid-core",
+    "crates/hybrid-primitives",
+    "crates/hybrid-jwt",
+    "crates/hybrid-oidc",
+    "crates/hybrid-ffi",
+    "crates/hybrid-demo",
+    "crates/vector-gen",
+]
+exclude = ["fuzz"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+authors = ["HaiqaKaleem1"]
+repository = "https://github.com/HaiqaKaleem1/hybrid-oidc"
+homepage = "https://github.com/HaiqaKaleem1/hybrid-oidc"
+
+[workspace.dependencies]
+hybrid-core = { path = "crates/hybrid-core" }
+hybrid-primitives = { path = "crates/hybrid-primitives" }
+hybrid-jwt = { path = "crates/hybrid-jwt" }
+hybrid-oidc = { path = "crates/hybrid-oidc" }
+
+# Post-quantum primitives (FIPS 203 / FIPS 204, RustCrypto implementations).
+# NOTE: ml-kem/ml-dsa use rand_core 0.10 while x25519-dalek/p256 use
+# rand_core 0.6. We deliberately avoid passing RNGs across that boundary:
+# all key material is derived from raw OS entropy via the `getrandom` crate
+# and fed to the primitives through their seed/bytes constructors.
+ml-kem = { version = "0.3", features = ["getrandom"] }
+ml-dsa = { version = "0.1" }
+hybrid-array = "0.4"
+
+# Classical primitives.
+x25519-dalek = { version = "2.0", features = ["static_secrets"] }
+p256 = { version = "0.13" }
+
+# Plumbing.
+getrandom = "0.3"
+hkdf = "0.12"
+sha2 = "0.10"
+hmac = "0.12"
+subtle = "2"
+zeroize = { version = "1", features = ["zeroize_derive"] }
+base64 = "0.22"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+hex = "0.4"
+
+# Demo server.
+axum = "0.7"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal"] }
+
+# Benchmarking.
+criterion = "0.5"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
