@@ -1,0 +1,34 @@
+[package]
+name = "hybrid-demo"
+description = "HTTP demo server: full OIDC Authorization Code flow simulation with hybrid cryptography"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "hybrid-demo"
+path = "src/main.rs"
+
+[dependencies]
+hybrid-core.workspace = true
+hybrid-primitives.workspace = true
+hybrid-oidc.workspace = true
+hybrid-jwt.workspace = true
+axum.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+base64.workspace = true
+sha2.workspace = true
+getrandom = "0.3"
+hex.workspace = true
+urlencoding = "2"
+either = "1.19.0"
+
+[dev-dependencies]
+hyper = { version = "1", features = ["server", "client", "http1"] }
+http-body-util = "0.1"
+criterion = "0.5"
