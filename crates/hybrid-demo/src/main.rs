@@ -3,24 +3,26 @@
 mod store;
 
 use axum::{
-    extract::{Json, Query, State},
-    http::{header, StatusCode},
-    response::IntoResponse,
-    body::Body,
-    routing::{get, post},
     Router,
+    extract::{Json, Query, State},
+    http::{StatusCode, header},
+    response::IntoResponse,
+    routing::{get, post},
 };
 use hybrid_jwt::Jwt;
-use hybrid_oidc::{build_jwks, mint_id_token, verify_id_token, IdTokenConfig};
+use hybrid_oidc::{IdTokenConfig, build_jwks, verify_id_token};
 use hybrid_primitives::ecdsa_p256_mldsa_87;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::store::{AccessTokenRecord, DemoStore, Grant, RefreshTokenRecord};
+use crate::store::{DemoStore, Grant};
 
+/// The `/token` response shape (RFC 6749 §5.1). Built by the not-yet-implemented
+/// token endpoint; see `token_handler`.
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 struct TokenResponse {
     id_token: String,
     access_token: String,
@@ -120,6 +122,8 @@ struct AuthorizeParams {
 #[derive(Debug, Deserialize)]
 struct IntrospectRequest {
     token: String,
+    /// Parsed per RFC 7662's request shape; not yet consulted by the demo.
+    #[allow(dead_code)]
     token_type_hint: Option<String>,
     client_id: Option<String>,
     client_secret: Option<String>,
@@ -146,6 +150,9 @@ struct IntrospectionResponse {
 
 #[derive(Debug, Deserialize)]
 struct EndSessionRequest {
+    /// Parsed per OpenID Connect Session Management's request shape; not yet
+    /// consulted by the demo.
+    #[allow(dead_code)]
     id_token_hint: Option<String>,
     post_logout_redirect_uri: Option<String>,
     state: Option<String>,
@@ -196,11 +203,11 @@ fn make_id(prefix: &str, data: &str) -> String {
     format!("{}-{}-{}", prefix, data, &hash[..12])
 }
 
-fn create_hybrid_and_keys() -> (
-    hybrid_primitives::EcdsaP256MlDsa87,
-    Vec<u8>,
-    Vec<u8>,
-) {
+/// Generates a hybrid signing keypair. Kept for the not-yet-implemented
+/// `/token` endpoint (see `token_handler`), which will need a *persistent*
+/// keypair in `AppState` rather than a fresh one per request.
+#[allow(dead_code)]
+fn create_hybrid_and_keys() -> (hybrid_primitives::EcdsaP256MlDsa87, Vec<u8>, Vec<u8>) {
     let sig = ecdsa_p256_mldsa_87();
     let (vk, sk) = sig.skgen_h().expect("keygen");
     (sig, vk, sk)
@@ -208,9 +215,7 @@ fn create_hybrid_and_keys() -> (
 
 // --------------------------------------------------------------------- handlers
 
-async fn discovery_handler(
-    Query(q): Query<DiscoveryQuery>,
-) -> impl IntoResponse {
+async fn discovery_handler(Query(q): Query<DiscoveryQuery>) -> impl IntoResponse {
     let issuer = q
         .issuer
         .unwrap_or_else(|| "https://demo.hybrid-oidc.local".to_string());
@@ -239,7 +244,10 @@ async fn authorize_handler(
         None => {
             return (
                 StatusCode::BAD_REQUEST,
-                [(header::LOCATION, "https://demo.hybrid-oidc.local/error?error=invalid_client")],
+                [(
+                    header::LOCATION,
+                    "https://demo.hybrid-oidc.local/error?error=invalid_client",
+                )],
             )
                 .into_response();
         }
@@ -248,7 +256,10 @@ async fn authorize_handler(
     if p.response_type != "code" {
         return (
             StatusCode::BAD_REQUEST,
-            [(header::LOCATION, "https://demo.hybrid-oidc.local/error?error=invalid_request")],
+            [(
+                header::LOCATION,
+                "https://demo.hybrid-oidc.local/error?error=invalid_request",
+            )],
         )
             .into_response();
     }
@@ -256,9 +267,10 @@ async fn authorize_handler(
     if !client.redirect_uris.contains(&p.redirect_uri) {
         return (
             StatusCode::BAD_REQUEST,
-            [
-                (header::LOCATION, "https://demo.hybrid-oidc.local/error?error=invalid_redirect_uri"),
-            ],
+            [(
+                header::LOCATION,
+                "https://demo.hybrid-oidc.local/error?error=invalid_redirect_uri",
+            )],
         )
             .into_response();
     }
@@ -267,9 +279,10 @@ async fn authorize_handler(
     if !scopes.contains(&"openid") {
         return (
             StatusCode::BAD_REQUEST,
-            [
-                (header::LOCATION, "https://demo.hybrid-oidc.local/error?error=invalid_scope"),
-            ],
+            [(
+                header::LOCATION,
+                "https://demo.hybrid-oidc.local/error?error=invalid_scope",
+            )],
         )
             .into_response();
     }
@@ -377,10 +390,16 @@ async fn userinfo_handler(
     let scopes: Vec<&str> = at.scope.split_whitespace().collect();
 
     let mut claims = serde_json::Map::new();
-    claims.insert("sub".to_string(), serde_json::Value::String(user.id.clone()));
+    claims.insert(
+        "sub".to_string(),
+        serde_json::Value::String(user.id.clone()),
+    );
 
     if scopes.contains(&"profile") {
-        claims.insert("name".to_string(), serde_json::Value::String(user.name.clone()));
+        claims.insert(
+            "name".to_string(),
+            serde_json::Value::String(user.name.clone()),
+        );
         claims.insert(
             "preferred_username".to_string(),
             serde_json::Value::String(user.preferred_username.clone()),
@@ -388,7 +407,10 @@ async fn userinfo_handler(
     }
 
     if scopes.contains(&"email") {
-        claims.insert("email".to_string(), serde_json::Value::String(user.email.clone()));
+        claims.insert(
+            "email".to_string(),
+            serde_json::Value::String(user.email.clone()),
+        );
     }
 
     claims.insert(
@@ -445,7 +467,11 @@ async fn introspect_handler(
             let resp = IntrospectionResponse {
                 active,
                 scope: if active { Some(at.scope.clone()) } else { None },
-                client_id: if active { Some(at.client_id.clone()) } else { None },
+                client_id: if active {
+                    Some(at.client_id.clone())
+                } else {
+                    None
+                },
                 exp: if active { Some(at.expires_at) } else { None },
                 iat: if active { Some(at.created_at) } else { None },
                 sub: if active {
@@ -458,7 +484,11 @@ async fn introspect_handler(
                 } else {
                     None
                 },
-                aud: if active { Some(at.client_id.clone()) } else { None },
+                aud: if active {
+                    Some(at.client_id.clone())
+                } else {
+                    None
+                },
             };
             Json(resp).into_response()
         }
@@ -512,9 +542,7 @@ async fn revoke_handler(
     StatusCode::OK.into_response()
 }
 
-async fn endsession_handler(
-    Query(params): Query<EndSessionRequest>,
-) -> impl IntoResponse {
+async fn endsession_handler(Query(params): Query<EndSessionRequest>) -> impl IntoResponse {
     let mut location: String;
     if let Some(ref post_logout) = params.post_logout_redirect_uri {
         location = post_logout.clone();
@@ -533,9 +561,7 @@ async fn endsession_handler(
     (StatusCode::SEE_OTHER, [(header::LOCATION, location)]).into_response()
 }
 
-async fn replay_demo_handler(
-    Json(req): Json<ReplayDemoRequest>,
-) -> impl IntoResponse {
+async fn replay_demo_handler(Json(req): Json<ReplayDemoRequest>) -> impl IntoResponse {
     let sig = ecdsa_p256_mldsa_87();
     let (vk, sk) = sig.skgen_h().expect("keygen");
 
@@ -549,12 +575,13 @@ async fn replay_demo_handler(
 
     let jwt_json = serde_json::to_string(&jwt).expect("serialization");
 
-    let signing_input_preview = Some(format!("{}...", &hex::encode(&binding)[..16]));
+    let signing_input_preview = Some(format!("{}...", &hex::encode(binding)[..16]));
 
     let verify_original = hybrid_jwt::verify_jwt(&sig, &vk, &jwt, Some(&binding)).is_ok();
 
     let different_binding = Sha256::digest(b"different channel");
-    let verify_different = hybrid_jwt::verify_jwt(&sig, &vk, &jwt, Some(&different_binding)).is_ok();
+    let verify_different =
+        hybrid_jwt::verify_jwt(&sig, &vk, &jwt, Some(&different_binding)).is_ok();
 
     let verify_without = hybrid_jwt::verify_jwt(&sig, &vk, &jwt, None).is_ok();
 
@@ -565,12 +592,10 @@ async fn replay_demo_handler(
         verify_on_different: verify_different,
         verify_without_binding: verify_without,
     })
-        .into_response()
+    .into_response()
 }
 
-async fn verify_handler(
-    Json(req): Json<VerifyRequest>,
-) -> impl IntoResponse {
+async fn verify_handler(Json(req): Json<VerifyRequest>) -> impl IntoResponse {
     let sig = ecdsa_p256_mldsa_87();
     let (vk, _sk) = sig.skgen_h().expect("keygen");
 
@@ -633,8 +658,16 @@ async fn verify_handler(
     );
 
     match result {
-        Ok(()) => Json(VerifyResponse { valid: true, error: None }).into_response(),
-        Err(e) => Json(VerifyResponse { valid: false, error: Some(e.to_string()) }).into_response(),
+        Ok(()) => Json(VerifyResponse {
+            valid: true,
+            error: None,
+        })
+        .into_response(),
+        Err(e) => Json(VerifyResponse {
+            valid: false,
+            error: Some(e.to_string()),
+        })
+        .into_response(),
     }
 }
 
@@ -659,9 +692,7 @@ async fn main() {
         .route("/endsession", get(endsession_handler))
         .route(
             "/check-session-iframe",
-            get(|| async {
-                "OIDC Check Session Iframe (demo placeholder)".into_response()
-            }),
+            get(|| async { "OIDC Check Session Iframe (demo placeholder)".into_response() }),
         )
         .route("/replay-demo", post(replay_demo_handler))
         .route("/verify", post(verify_handler))
